@@ -2,13 +2,16 @@ import Link from 'next/link';
 import { getLatestArticles } from '@/actions/articles';
 import { getCategories, getServices } from '@/actions/services';
 import ServicesGrid from '@/components/home/ServicesGrid';
-import NoticeBoard from '@/components/home/NoticeBoard'; // ایمپورت تابلو اعلانات
+import NoticeBoard from '@/components/home/NoticeBoard';
 import { formatPersianDate } from '@/lib/utils';
 import { 
   FileText, Search, Headphones,
   ChevronDown, ArrowLeft, Calendar, FileType,
   Building, Calculator, GraduationCap, Car
 } from 'lucide-react';
+
+// جلوگیری از تایم‌اوت بیلد و رندر داینامیک صفحه در زمان درخواست کاربر
+export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   // واکشی اطلاعات از دیتابیس به صورت موازی
@@ -55,7 +58,7 @@ export default async function Home() {
                   <Link href="/order/new" className="px-4 py-3 hover:bg-slate-50 border-b border-slate-50 flex items-center gap-2 text-slate-700"><Building size={16} className="text-emerald-500"/> نقل و انتقال مسکن</Link>
                   <Link href="/order/new" className="px-4 py-3 hover:bg-slate-50 border-b border-slate-50 flex items-center gap-2 text-slate-700"><Calculator size={16} className="text-blue-500"/> امور مالیاتی</Link>
                   <Link href="/order/new" className="px-4 py-3 hover:bg-slate-50 border-b border-slate-50 flex items-center gap-2 text-slate-700"><GraduationCap size={16} className="text-indigo-500"/> امور دانشگاهی</Link>
-                  <Link href="/order/new" className="px-4 py-3 hover:bg-slate-50 flex items-center gap-2 text-slate-700"><Car size={16} className="text-rose-500"/> خدمات خودرو</Link>
+                  <Link href="/order/new" className="px-4 py-3 hover:bg-slate-50 border-b border-slate-50 flex items-center gap-2 text-slate-700"><Car size={16} className="text-rose-500"/> خدمات خودرو</Link>
                 </div>
               </div>
               <Link href="#news" className="hover:text-blue-600 transition-colors">مقالات و اخبار</Link>
@@ -106,7 +109,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* تابلو اعلانات و تقویم ثبت‌نام‌ها (اضافه شد) */}
+      {/* تابلو اعلانات و تقویم ثبت‌نام‌ها */}
       <NoticeBoard />
 
       {/* بخش خدمات داینامیک */}
