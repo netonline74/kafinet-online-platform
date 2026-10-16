@@ -1,49 +1,70 @@
-﻿'use server';
+'use server';
 
 import { supabase } from '@/lib/supabase';
 import { revalidatePath } from 'next/cache';
 import { OrderItem, OrderStatus } from '@/types/order';
+import { orderWizardSchema } from '@/types/orderSchema';
 
-// ۱. ثبت سفارش جدید در دیتابیس (با الگوریتم تولید کد یکتا)
-export async function createOrderAction(data: any) {
+// ۱. ثبت سفارش جدید در دیتابیس (با اعتبارسنجی Zod و تولید کد رهگیری یکتا)
+export async function createOrderAction(rawInput: unknown) {
+  // الف) اعتبارسنجی داده‌های ورودی با Zod
+  const validationResult = orderWizardSchema.safeParse(rawInput);
+  if (!validationResult.success) {
+    const issue = validationResult.error.issues[0];
+    return {
+      success: false,
+      error: issue ? issue.message : 'اطلاعات وارد شده نامعتبر است.',
+    };
+  }
+
+  const validData = validationResult.data;
+
+  // ب) الگوریتم تولید کد رهگیری یکتا
   let trackingCode = '';
   let isUnique = false;
   let attempts = 0;
   const MAX_ATTEMPTS = 10;
 
-  // حلقه بررسی یکتا بودن کد رهگیری
   while (!isUnique && attempts < MAX_ATTEMPTS) {
-    // تولید کد تصادفی ۶ رقمی
     trackingCode = 'CN-' + Math.floor(100000 + Math.random() * 900000).toString();
-    
-    // بررسی دیتابیس برای پیدا کردن کد مشابه
+
     const { data: existingOrder, error: checkError } = await supabase
       .from('orders')
       .select('id')
       .eq('tracking_code', trackingCode)
-      .maybeSingle(); // اگر رکوردی نباشد، null برمی‌گرداند
+      .maybeSingle();
 
     if (checkError) {
       return { success: false, error: 'خطای سیستمی در بررسی وضعیت یکتا بودن کد رهگیری.' };
     }
 
-    // اگر existingOrder خالی باشد (null)، یعنی کد در دیتابیس نیست و یکتاست
     if (!existingOrder) {
       isUnique = true;
     }
-    
+
     attempts++;
   }
 
-  // اگر بعد از 10 بار تلاش نتوانست کد یکتا بسازد (بسیار نادر)
   if (!isUnique) {
     return { success: false, error: 'ترافیک سیستم بالاست. لطفاً چند لحظه دیگر دوباره تلاش کنید.' };
   }
 
-  // ثبت سفارش با کد رهگیری اختصاصی و یکتا
+  // ج) ذخیره داده‌های اعتبارسنجی‌شده در جدول orders
   const { data: insertedData, error } = await supabase
     .from('orders')
-    .insert([{ ...data, tracking_code: trackingCode, status: 'pending' }])
+    .insert([
+      {
+        service_id: validData.serviceId,
+        full_name: validData.fullName,
+        national_code: validData.nationalCode,
+        phone_number: validData.phoneNumber,
+        description: validData.description || null,
+        // اگر فایل‌ها جداگانه آپلود شده باشند، در ورودی قرار دارند
+        file_urls: (rawInput as any)?.file_urls || [],
+        tracking_code: trackingCode,
+        status: 'pending' as OrderStatus,
+      },
+    ])
     .select()
     .single();
 
@@ -51,9 +72,9 @@ export async function createOrderAction(data: any) {
     return { success: false, error: error.message };
   }
 
-  // پاک کردن کش برای آپدیت در لحظه‌ی پنل ادمین
+  // د) به‌روزرسانی کش پنل ادمین
   revalidatePath('/admin');
-  return { success: true, trackingCode };
+  return { success: true, trackingCode, order: insertedData as OrderItem };
 }
 
 // ۲. دریافت اطلاعات سفارش برای صفحه پیگیری مشتری
@@ -96,7 +117,7 @@ export async function updateOrderStatus(orderId: string, newStatus: OrderStatus)
     return { success: false, error: error.message };
   }
 
-  // آپدیت کردن کش پنل مدیریت و صفحه پیگیری تا تغییرات بلافاصله اعمال شوند
+  // آپدیت کردن کش پنل مدیریت و صفحه پیگیری
   revalidatePath('/admin');
   revalidatePath('/track');
   return { success: true };
@@ -105,7 +126,7 @@ export async function updateOrderStatus(orderId: string, newStatus: OrderStatus)
 // ۵. تابع بازگشت به عقب (Rollback) برای پاک کردن فایل‌های یتیم هنگام بروز خطا
 export async function rollbackFilesAction(filePaths: string[]) {
   if (!filePaths || filePaths.length === 0) return { success: true };
-  
+
   const { error } = await supabase.storage
     .from('order-files')
     .remove(filePaths);
