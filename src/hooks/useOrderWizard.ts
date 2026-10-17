@@ -1,9 +1,8 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { OrderFormData } from '@/types/order';
 import { createOrderAction, rollbackFilesAction } from '@/actions/orders';
-import { supabase } from '@/lib/supabase';
 
 // مقادیر اولیه شامل فیلدهای داینامیک متنی و فایلی
 const initialData: OrderFormData = {
@@ -82,29 +81,30 @@ export function useOrderWizard() {
     
     setLoading(true);
     setError(null);
-    let successfullyUploadedPaths: string[] = [];
+    const successfullyUploadedPaths: string[] = [];
 
     try {
       const fileUrls: string[] = [];
       
-      // ۱. آپلود فایل‌های داینامیک
+      // ۱. آپلود فایل‌های داینامیک از طریق روت امن /api/upload
       const dynamicFileEntries = Object.values(formData.dynamic_files);
       for (const file of dynamicFileEntries) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = Math.random().toString(36).substring(2) + Date.now() + '.' + fileExt;
-        const filePath = 'uploads/' + fileName;
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', file);
 
-        const { error: uploadError } = await supabase.storage
-          .from('order-files')
-          .upload(filePath, file);
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          body: uploadFormData,
+        });
 
-        if (!uploadError) {
-          const { data } = supabase.storage.from('order-files').getPublicUrl(filePath);
-          fileUrls.push(data.publicUrl);
-          successfullyUploadedPaths.push(filePath);
-        } else {
-          throw new Error('خطا در آپلود یکی از فایل‌ها. لطفاً فقط از فرمت‌های مجاز استفاده کنید.');
+        const uploadData = await uploadRes.json();
+
+        if (!uploadRes.ok || !uploadData.success) {
+          throw new Error(uploadData.error || 'خطا در بارگذاری مدارک.');
         }
+
+        fileUrls.push(uploadData.filePath);
+        successfullyUploadedPaths.push(uploadData.filePath);
       }
 
       // ۲. چسباندن فیلدهای متنی داینامیک به فیلد توضیحات برای نمایش به ادمین

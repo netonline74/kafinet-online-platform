@@ -7,8 +7,17 @@ import { orderWizardSchema } from '@/types/orderSchema';
 
 // ۱. ثبت سفارش جدید در دیتابیس (با اعتبارسنجی Zod و تولید کد رهگیری یکتا)
 export async function createOrderAction(rawInput: unknown) {
+  const inputObj = (rawInput as any) || {};
+  const normalizedInput = {
+    serviceId: inputObj.serviceId || inputObj.service_id || '',
+    fullName: inputObj.fullName || inputObj.full_name || '',
+    nationalCode: inputObj.nationalCode || inputObj.national_id || '',
+    phoneNumber: inputObj.phoneNumber || inputObj.phone || '',
+    description: inputObj.description || '',
+  };
+
   // الف) اعتبارسنجی داده‌های ورودی با Zod
-  const validationResult = orderWizardSchema.safeParse(rawInput);
+  const validationResult = orderWizardSchema.safeParse(normalizedInput);
   if (!validationResult.success) {
     const issue = validationResult.error.issues[0];
     return {
@@ -55,12 +64,15 @@ export async function createOrderAction(rawInput: unknown) {
     .insert([
       {
         service_id: validData.serviceId,
+        service_type: inputObj.service_type || 'خدمات اینترنتی',
         full_name: validData.fullName,
+        national_id: validData.nationalCode,
         national_code: validData.nationalCode,
+        phone: validData.phoneNumber,
         phone_number: validData.phoneNumber,
         description: validData.description || null,
-        // اگر فایل‌ها جداگانه آپلود شده باشند، در ورودی قرار دارند
-        file_urls: (rawInput as any)?.file_urls || [],
+        amount: inputObj.amount || 0,
+        file_urls: inputObj.file_urls || [],
         tracking_code: trackingCode,
         status: 'pending' as OrderStatus,
       },
@@ -128,9 +140,53 @@ export async function rollbackFilesAction(filePaths: string[]) {
   if (!filePaths || filePaths.length === 0) return { success: true };
 
   const { error } = await supabase.storage
-    .from('order-files')
+    .from('order-documents')
     .remove(filePaths);
 
   if (error) return { success: false, error: error.message };
   return { success: true };
+}
+
+// ۶. تولید لینک موقت امضاشده (Signed URL) برای فایل‌های باکت order-documents
+// دسترسی موقت ۱۵ دقیقه‌ای (۹۰۰ ثانیه) بدون ایجاد لینک عمومی مستقیم
+export async function getOrderDocumentSignedUrlAction(filePath: string, expiresIn: number = 900) {
+  try {
+    if (!filePath) {
+      return { success: false, error: 'مسیر فایل مشخص نشده است.' };
+    }
+
+    // نرمال‌سازی مسیر فایل در صورتی که URL یا پیشوند فرستاده شده باشد
+    let cleanPath = filePath;
+    if (cleanPath.includes('order-documents/')) {
+      cleanPath = cleanPath.split('order-documents/')[1];
+    } else if (cleanPath.includes('/uploads/')) {
+      cleanPath = 'uploads/' + cleanPath.split('/uploads/')[1];
+    }
+    // حذف اسلش ابتدا یا پارامترهای کوئری احتمالی
+    cleanPath = cleanPath.replace(/^\/+/, '').split('?')[0];
+
+    // فراخوانی متد استاندارد createSignedUrl سوپابیس با زمان انقضا (پیش‌فرض ۱۵ دقیقه = ۹۰۰ ثانیه)
+    const { data, error } = await supabase.storage
+      .from('order-documents')
+      .createSignedUrl(cleanPath, expiresIn);
+
+    if (error || !data?.signedUrl) {
+      return { 
+        success: false, 
+        error: error?.message || 'خطا در صدور لینک امضاشده از مخزن اسناد.' 
+      };
+    }
+
+    return { 
+      success: true, 
+      signedUrl: data.signedUrl,
+      expiresIn,
+      expiresAt: new Date(Date.now() + expiresIn * 1000).toISOString()
+    };
+  } catch (err: any) {
+    return { 
+      success: false, 
+      error: err.message || 'خطای غیرمنتظره در تولید لینک امن موقت.' 
+    };
+  }
 }

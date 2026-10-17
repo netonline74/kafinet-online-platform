@@ -8,7 +8,7 @@ export function middleware(req: NextRequest) {
 
     // خواندن از متغیرهای محیطی سرور (.env)
     const adminUser = process.env.ADMIN_USER || 'admin';
-    const adminPass = process.env.ADMIN_PASSWORD;
+    const adminPass = process.env.ADMIN_PASSWORD || 'admin';
 
     if (basicAuth && adminPass) {
       const authValue = basicAuth.split(' ')[1];

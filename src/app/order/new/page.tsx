@@ -1,9 +1,10 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import Link from 'next/link';
 import { useOrderWizard } from '@/hooks/useOrderWizard';
 import Step1Service from '@/components/order/Step1Service';
+import StepUserInfo from '@/components/order/StepUserInfo';
 import { Check, ChevronLeft, ChevronRight, Loader2, UploadCloud, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 const steps = [
@@ -81,62 +82,7 @@ export default function OrderWizardPage() {
 
             {/* مرحله ۲: اطلاعات فردی */}
             {step === 2 && (
-              <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl mb-6">
-                  <p className="text-sm text-slate-600">
-                    درخواست شما برای <span className="font-bold text-blue-600">{formData.service_type}</span> ثبت می‌شود. لطفاً اطلاعات فردی متقاضی را وارد کنید.
-                  </p>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5">نام و نام خانوادگی</label>
-                  <input 
-                    type="text" 
-                    value={formData.full_name} 
-                    onChange={(e) => updateFields({ full_name: e.target.value })} 
-                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                    placeholder="مثال: علی محمدی" 
-                  />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1.5">کد ملی</label>
-                    <input 
-                      type="text" 
-                      value={formData.national_id} 
-                      onChange={(e) => updateFields({ national_id: e.target.value.replace(/\D/g, '') })} 
-                      className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-left font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                      placeholder="0123456789" 
-                      maxLength={10} 
-                      dir="ltr" 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1.5">شماره موبایل</label>
-                    <input 
-                      type="text" 
-                      value={formData.phone} 
-                      onChange={(e) => updateFields({ phone: e.target.value.replace(/\D/g, '') })} 
-                      className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-left font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                      placeholder="09120000000" 
-                      maxLength={11} 
-                      dir="ltr" 
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5">توضیحات تکمیلی (اختیاری)</label>
-                  <textarea 
-                    value={formData.description} 
-                    onChange={(e) => updateFields({ description: e.target.value })} 
-                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" 
-                    rows={3} 
-                    placeholder="اگر توضیح خاصی برای کارشناس دارید اینجا بنویسید..." 
-                  />
-                </div>
-              </div>
+              <StepUserInfo formData={formData} updateFields={updateFields} />
             )}
 
             {/* مرحله ۳: مدارک و اطلاعات تکمیلی داینامیک */}
@@ -253,28 +199,28 @@ export default function OrderWizardPage() {
                 <button 
                   onClick={prevStep}
                   disabled={step === 1 || loading}
-                  className={`flex items-center gap-1 px-5 py-2.5 rounded-xl text-sm font-bold transition-colors ${
-                    step === 1 ? 'opacity-0 pointer-events-none' : 'text-slate-600 bg-slate-100 hover:bg-slate-200'
+                  className={`h-12 px-6 rounded-2xl text-sm font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 active:scale-95 transition-all shadow-xs flex items-center gap-1.5 cursor-pointer ${
+                    step === 1 ? 'opacity-0 pointer-events-none' : ''
                   }`}
                 >
-                  <ChevronRight size={18} /> بازگشت
+                  <ChevronRight size={18} /> <span>مرحله قبل</span>
                 </button>
                 
                 {step < 3 ? (
                   <button 
                     onClick={nextStep}
-                    className="flex items-center gap-1 px-8 py-2.5 rounded-xl text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all hover:-translate-y-0.5"
+                    className="h-12 px-8 rounded-2xl text-sm font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-md shadow-slate-900/10 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
                   >
-                    مرحله بعد <ChevronLeft size={18} />
+                    <span>مرحله بعد</span> <ChevronLeft size={18} />
                   </button>
                 ) : (
                   <button 
                     onClick={submitOrder}
                     disabled={loading}
-                    className="flex items-center gap-2 px-8 py-2.5 rounded-xl text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 transition-all hover:-translate-y-0.5 disabled:opacity-70 disabled:pointer-events-none"
+                    className="h-12 px-9 rounded-2xl text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/25 hover:shadow-xl hover:-translate-y-0.5 active:scale-95 transition-all flex items-center gap-2.5 disabled:opacity-70 disabled:pointer-events-none cursor-pointer"
                   >
                     {loading ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} strokeWidth={3} />}
-                    {loading ? 'در حال آپلود و ثبت...' : 'تایید نهایی و ارسال'}
+                    <span>{loading ? 'در حال آپلود و ثبت پرونده...' : 'تایید نهایی و ارسال سفارش'}</span>
                   </button>
                 )}
               </div>

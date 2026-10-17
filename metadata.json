@@ -1,0 +1,6 @@
+{
+  "name": "سامانه خدمات الکترونیک کافینت",
+  "description": "سامانه ثبت و پیگیری آنلاین سفارش‌های اینترنتی، امور مالیاتی، ملکی و اداری",
+  "permissions": [],
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

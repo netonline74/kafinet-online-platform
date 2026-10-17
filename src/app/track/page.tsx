@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { getOrderByTrackingCode } from '@/actions/orders';
@@ -78,10 +78,10 @@ export default function TrackPage() {
             <Search size={32} strokeWidth={2.5} />
           </div>
           
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 mb-3 tracking-tight">
             پیگیری وضعیت سفارش
           </h2>
-          <p className="text-sm text-slate-500 mb-8 max-w-md mx-auto leading-relaxed font-medium">
+          <p className="text-base sm:text-lg text-slate-600 mb-8 max-w-md mx-auto leading-relaxed font-normal">
             برای استعلام و مشاهده آخرین وضعیت پرونده خود، کد رهگیری ۶ رقمی صادر شده در هنگام ثبت سفارش را در کادر زیر وارد کنید.
           </p>
 
@@ -92,12 +92,12 @@ export default function TrackPage() {
                 placeholder="مثال: CN-123456"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                className="w-full rounded-2xl border-2 border-slate-100 bg-slate-50/50 pr-5 pl-14 py-4 text-left font-mono text-lg uppercase tracking-wider focus:outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm placeholder:text-slate-400 placeholder:text-right placeholder:tracking-normal placeholder:font-sans placeholder:text-sm"
+                className="w-full h-13 rounded-2xl border-2 border-slate-200 bg-slate-50/50 pr-5 pl-14 py-3 text-left font-mono text-lg uppercase tracking-wider focus:outline-none focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all shadow-xs placeholder:text-slate-400 placeholder:text-right placeholder:tracking-normal placeholder:font-sans placeholder:text-sm font-semibold"
               />
               <button
                 type="button"
                 onClick={handlePaste}
-                className="absolute left-3 top-1/2 -translate-y-1/2 p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                className="absolute left-3 top-1/2 -translate-y-1/2 p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all cursor-pointer"
                 title="جای‌گذاری کد رهگیری"
               >
                 <ClipboardPaste size={20} />
@@ -106,10 +106,10 @@ export default function TrackPage() {
             <button
               type="submit"
               disabled={loading || !code.trim()}
-              className="px-8 py-4 bg-blue-600 text-white rounded-2xl text-base font-bold hover:bg-blue-700 disabled:opacity-50 disabled:hover:bg-blue-600 flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 transition-all hover:-translate-y-0.5 hover:shadow-blue-600/40 w-full sm:w-auto"
+              className="h-13 px-8 bg-blue-600 text-white rounded-2xl text-base font-extrabold hover:bg-blue-700 disabled:opacity-50 disabled:hover:bg-blue-600 flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 transition-all hover:-translate-y-0.5 active:scale-95 cursor-pointer w-full sm:w-auto"
             >
               {loading ? <Loader2 className="animate-spin" size={20} /> : <Search size={20} />}
-              <span>استعلام</span>
+              <span>استعلام وضعیت</span>
             </button>
           </form>
 

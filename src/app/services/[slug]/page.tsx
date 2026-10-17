@@ -5,8 +5,9 @@ import FaqAccordion from '@/components/services/FaqAccordion';
 import { CheckCircle2, ChevronLeft, Clock, FileText, Check, ShieldCheck, ArrowRight } from 'lucide-react';
 
 // ۱. تولید متادیتای سئو به صورت داینامیک
-export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const data = servicesData[params.slug];
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const data = servicesData[slug];
   if (!data) return { title: 'خدمت یافت نشد' };
 
   return {
@@ -22,8 +23,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-export default function ServiceLandingPage({ params }: { params: { slug: string } }) {
-  const data = servicesData[params.slug];
+export default async function ServiceLandingPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const data = servicesData[slug];
   
   if (!data) notFound();
 
@@ -69,26 +71,28 @@ export default function ServiceLandingPage({ params }: { params: { slug: string 
           <div className="flex flex-col lg:flex-row gap-12 items-center">
             <div className="flex-1 text-center lg:text-right">
               {/* استفاده از متغیر جدید badgeText */}
-              <span className="inline-block px-3 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg mb-6">
+              <span className="inline-block px-3.5 py-1.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-xl mb-6 border border-blue-100">
                 {data.badgeText}
               </span>
-              <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 leading-tight mb-6">
+              <h1 className="text-3xl sm:text-5xl font-black text-slate-900 leading-[1.25] mb-6 tracking-tight">
                 {data.title}
               </h1>
               {/* استفاده از متغیر جدید shortDescription */}
-              <p className="text-lg text-slate-600 leading-relaxed mb-8 max-w-2xl mx-auto lg:mx-0">
+              <p className="text-base sm:text-lg text-slate-600 leading-relaxed mb-8 max-w-2xl mx-auto lg:mx-0 font-normal">
                 {data.shortDescription}
               </p>
               
               <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
                 <Link 
                   href={data.ctaUrl} 
-                  className="w-full sm:w-auto px-8 py-3.5 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5"
+                  className="w-full sm:w-auto h-13 px-8 bg-blue-600 text-white rounded-2xl font-extrabold text-base shadow-lg shadow-blue-600/25 hover:bg-blue-700 hover:shadow-xl hover:-translate-y-0.5 active:scale-95 transition-all flex items-center justify-center gap-2.5"
                 >
-                  <FileText size={20} /> ثبت درخواست آنلاین
+                  <FileText size={20} />
+                  <span>ثبت درخواست آنلاین</span>
                 </Link>
-                <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
-                  <ShieldCheck size={18} className="text-emerald-500" /> تضمین امنیت اطلاعات
+                <div className="flex items-center gap-2 text-sm text-slate-600 font-bold">
+                  <ShieldCheck size={18} className="text-emerald-500" />
+                  <span>تضمین امنیت اطلاعات</span>
                 </div>
               </div>
             </div>
