@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { servicesConfig, getServiceBySlug, ServiceConfig } from '@/config/services-config';
 import { servicesData } from '@/config/servicesData';
 import DynamicServiceForm from '@/components/services/DynamicServiceForm';
-import FaqAccordion from '@/components/services/FaqAccordion';
 import { 
   CheckCircle2, 
   ChevronLeft, 
@@ -320,20 +319,35 @@ export default async function ServiceLandingPage({ params }: PageProps) {
               </div>
             </div>
 
-            {/* ۳. سوالات متداول (FAQ Accordion) */}
+            {/* ۳. سوالات متداول (FAQ با تگ بومی details و summary) */}
             {currentService.faqs && currentService.faqs.length > 0 && (
-              <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-xs space-y-6">
-                <div className="flex items-center gap-2.5">
+              <div className="space-y-4 my-8" dir="rtl">
+                <div className="flex items-center gap-2.5 mb-2">
                   <div className="size-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
                     <HelpCircle size={20} />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-slate-900">سوالات متداول متقاضیان</h3>
+                    <h3 className="text-xl font-bold text-gray-800">سوالات متداول</h3>
                     <p className="text-xs text-slate-500 mt-0.5">پاسخ رسمی به پرسش‌های پرتکرار این خدمت</p>
                   </div>
                 </div>
 
-                <FaqAccordion faqs={currentService.faqs as any} />
+                {currentService.faqs.map((faq, index) => (
+                  <details 
+                    key={index} 
+                    className="group bg-white border border-gray-200 rounded-2xl p-4 transition-all duration-200 open:border-blue-500 open:shadow-md cursor-pointer"
+                  >
+                    <summary className="flex items-center justify-between font-semibold text-gray-800 list-none select-none">
+                      <span>{faq.question}</span>
+                      <span className="transition-transform duration-300 group-open:rotate-180 text-blue-600 text-xl font-bold">
+                        ↓
+                      </span>
+                    </summary>
+                    <div className="mt-3 pt-3 border-t border-gray-100 text-gray-600 leading-relaxed text-sm">
+                      {faq.answer}
+                    </div>
+                  </details>
+                ))}
               </div>
             )}
 
