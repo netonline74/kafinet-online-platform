@@ -137,7 +137,7 @@ export default async function Home() {
       <NoticeBoard />
 
       {/* بخش خدمات داینامیک با کارت‌های لوکس و کامپوننت‌های مدرن */}
-      <ServicesGrid categories={categories} services={services} />
+      <ServicesGrid />
 
       {/* بخش مقالات داینامیک با تایپوگرافی بولد و خوانا */}
       <section className="py-24 bg-slate-50 border-t border-slate-200/70" id="news">
@@ -153,7 +153,7 @@ export default async function Home() {
               </p>
             </div>
             <Link 
-              href="/order/new" 
+              href="/#services" 
               className="h-11 px-5 rounded-xl font-bold text-xs bg-white text-slate-800 border border-slate-200 hover:bg-slate-100/80 shadow-xs inline-flex items-center gap-2 active:scale-95 transition-all"
             >
               <span>مشاهده همه خدمات</span>
@@ -180,7 +180,7 @@ export default async function Home() {
                   </div>
                   <div className="p-6 sm:p-7 flex-1 flex flex-col">
                     <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 mb-3">
-                      <Calendar size={14} /> <span>{article.created_at ? formatPersianDate(article.created_at) : 'به‌روزرسانی جدید'}</span>
+                      <Calendar size={14} /> <span suppressHydrationWarning>{article.created_at ? formatPersianDate(article.created_at) : 'به‌روزرسانی جدید'}</span>
                     </div>
                     <h3 className="font-extrabold text-slate-900 text-lg sm:text-xl mb-2.5 group-hover:text-blue-600 transition-colors leading-snug">
                       {article.title}

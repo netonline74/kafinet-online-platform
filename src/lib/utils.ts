@@ -10,9 +10,15 @@ export function formatToman(amount: number): string {
 }
 
 export function formatPersianDate(dateString: string): string {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat('fa-IR', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(date);
+  try {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('fa-IR', {
+      timeZone: 'Asia/Tehran',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    }).format(date);
+  } catch {
+    return dateString;
+  }
 }

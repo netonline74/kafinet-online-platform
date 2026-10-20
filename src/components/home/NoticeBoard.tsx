@@ -88,7 +88,7 @@ export default async function NoticeBoard() {
                         ${isCritical ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-50 text-slate-700 border-slate-200'}
                       `}>
                         <Clock className="size-3.5" />
-                        <span>{getDaysRemaining(item.deadline)}</span>
+                        <span suppressHydrationWarning>{getDaysRemaining(item.deadline)}</span>
                       </Badge>
                     )}
                   </div>

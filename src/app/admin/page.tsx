@@ -79,6 +79,17 @@ export default function AdminDashboard() {
   const [announcementForm, setAnnouncementForm] = useState({ title: '', description: '', category: 'خودرو', urgency_level: 'normal', deadline: '', action_link: '' });
   const [isSubmittingAnnouncement, setIsSubmittingAnnouncement] = useState(false);
   const [editingAnnId, setEditingAnnId] = useState<string | null>(null);
+  const [deletingAnnId, setDeletingAnnId] = useState<string | null>(null);
+
+  // State پیام‌ها و اعلان‌های درون‌برنامه‌ای (جایگزین alert و confirm در آی‌فریم)
+  const [notice, setNotice] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  const showNotice = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setNotice({ message, type });
+    setTimeout(() => {
+      setNotice((prev) => (prev?.message === message ? null : prev));
+    }, 4500);
+  };
 
   const fetchData = async () => {
     setRefreshing(true);
@@ -100,8 +111,12 @@ export default function AdminDashboard() {
   // هندلرهای پایه‌ای
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
     const res = await updateOrderStatus(orderId, newStatus);
-    if (res.success) setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-    else alert('خطا در بروزرسانی وضعیت');
+    if (res.success) {
+      setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+      showNotice('وضعیت پرونده با موفقیت به‌روزرسانی شد.', 'success');
+    } else {
+      showNotice('خطا در بروزرسانی وضعیت: ' + (res.error || 'خطای سرور'), 'error');
+    }
   };
 
   // هندلرهای اسناد امن با لینک امضاشده موقت (Signed URLs - 15 دقیقه)
@@ -122,11 +137,12 @@ export default function AdminDashboard() {
             expiresAt: res.expiresAt || new Date(Date.now() + 15 * 60 * 1000).toLocaleTimeString('fa-IR'),
           },
         }));
+        showNotice('لینک موقت امن ۱۵ دقیقه‌ای با موفقیت صادر شد.', 'success');
       } else {
-        alert('خطا در صدور لینک امن: ' + (res.error || 'فایل در باکت order-documents یافت نشد'));
+        showNotice('خطا در صدور لینک امن: ' + (res.error || 'فایل در باکت order-documents یافت نشد'), 'error');
       }
     } catch (err: any) {
-      alert('خطا در ارتباط با سرور: ' + err.message);
+      showNotice('خطا در ارتباط با سرور: ' + err.message, 'error');
     } finally {
       setGeneratingUrlFor(null);
     }
@@ -172,17 +188,23 @@ export default function AdminDashboard() {
       setAnnouncementForm({ title: '', description: '', category: 'خودرو', urgency_level: 'normal', deadline: '', action_link: '' });
       setEditingAnnId(null);
       fetchData(); 
-      alert(editingAnnId ? 'ویرایش موفقیت‌آمیز بود' : 'اطلاعیه با موفقیت ثبت شد');
-    } else alert('خطا: ' + res.error);
+      showNotice(editingAnnId ? 'ویرایش اطلاعیه با موفقیت ذخیره شد.' : 'اطلاعیه با موفقیت در سامانه ثبت شد.', 'success');
+    } else {
+      showNotice('خطا در ثبت اطلاعیه: ' + res.error, 'error');
+    }
     
     setIsSubmittingAnnouncement(false);
   };
 
   const handleDeleteAnnouncement = async (id: string) => {
-    if (!confirm('آیا از حذف این اطلاعیه مطمئن هستید؟')) return;
     const res = await deleteAnnouncementAction(id);
-    if (res.success) fetchData();
-    else alert('خطا در حذف اطلاعیه: ' + res.error);
+    setDeletingAnnId(null);
+    if (res.success) {
+      fetchData();
+      showNotice('اطلاعیه با موفقیت حذف گردید.', 'success');
+    } else {
+      showNotice('خطا در حذف اطلاعیه: ' + res.error, 'error');
+    }
   };
 
   const handleEditClick = (ann: any) => {
@@ -240,6 +262,32 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-slate-50 py-10 px-4" dir="rtl">
       <div className="max-w-6xl mx-auto space-y-6">
         
+        {/* نوار بازخورد و اعلان درون‌برنامه‌ای */}
+        {notice && (
+          <div className={`p-4 rounded-2xl flex items-center justify-between border transition-all animate-in fade-in slide-in-from-top-2 duration-300 ${
+            notice.type === 'success' 
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+              : notice.type === 'error'
+              ? 'bg-rose-50 border-rose-200 text-rose-800'
+              : 'bg-blue-50 border-blue-200 text-blue-800'
+          }`}>
+            <div className="flex items-center gap-2.5">
+              {notice.type === 'success' ? (
+                <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+              ) : (
+                <AlertCircle size={18} className="text-rose-600 shrink-0" />
+              )}
+              <span className="text-sm font-semibold">{notice.message}</span>
+            </div>
+            <button
+              onClick={() => setNotice(null)}
+              className="p-1 rounded-lg hover:bg-black/5 text-slate-500 hover:text-slate-800 transition-colors"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
+
         {/* هدر و تب‌ها */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
@@ -441,9 +489,27 @@ export default function AdminDashboard() {
                   <div key={ann.id} className="p-4 bg-slate-50 border border-slate-100 rounded-xl hover:bg-slate-100 transition-colors">
                     <div className="flex justify-between items-start mb-2">
                       <h4 className="text-sm font-bold text-slate-800 pl-4">{ann.title}</h4>
-                      <div className="flex gap-3 shrink-0">
-                        <button onClick={() => handleEditClick(ann)} className="text-xs font-bold text-blue-600 hover:text-blue-800">ویرایش</button>
-                        <button onClick={() => handleDeleteAnnouncement(ann.id)} className="text-xs font-bold text-rose-600 hover:text-rose-800">حذف</button>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button onClick={() => handleEditClick(ann)} className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors">ویرایش</button>
+                        {deletingAnnId === ann.id ? (
+                          <div className="flex items-center gap-1.5 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-lg">
+                            <span className="text-[11px] text-rose-700 font-bold">حذف؟</span>
+                            <button
+                              onClick={() => handleDeleteAnnouncement(ann.id)}
+                              className="text-[11px] font-bold text-white bg-rose-600 hover:bg-rose-700 px-2 py-0.5 rounded transition-colors"
+                            >
+                              بله
+                            </button>
+                            <button
+                              onClick={() => setDeletingAnnId(null)}
+                              className="text-[11px] font-bold text-slate-600 hover:text-slate-800 px-1 py-0.5"
+                            >
+                              لغو
+                            </button>
+                          </div>
+                        ) : (
+                          <button onClick={() => setDeletingAnnId(ann.id)} className="text-xs font-bold text-rose-600 hover:text-rose-800 transition-colors">حذف</button>
+                        )}
                       </div>
                     </div>
                     {ann.description && <p className="text-xs text-slate-500 mb-3">{ann.description}</p>}
