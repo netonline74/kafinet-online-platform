@@ -233,15 +233,15 @@ export async function rollbackFilesAction(filePaths: string[]) {
   if (!filePaths || filePaths.length === 0) return { success: true };
 
   const { error } = await supabase.storage
-    .from('order-documents')
+    .from('documents')
     .remove(filePaths);
 
   if (error) return { success: false, error: error.message };
   return { success: true };
 }
 
-// ۶. تولید لینک موقت امضاشده (Signed URL) برای فایل‌های باکت order-documents (منوط به احراز هویت معتبر ادمین)
-export async function getOrderDocumentSignedUrlAction(filePath: string, expiresIn: number = 900) {
+// ۶. تولید لینک موقت امضاشده (Signed URL) ۱۰ دقیقه‌ای برای مدارک (منوط به احراز هویت معتبر ادمین)
+export async function getOrderDocumentSignedUrlAction(filePath: string, expiresIn: number = 600) {
   try {
     // محدودسازی قطعی به نشست ادمین در سمت سرور
     const isAuthorized = await verifyAdminSession();
@@ -256,19 +256,20 @@ export async function getOrderDocumentSignedUrlAction(filePath: string, expiresI
       return { success: false, error: 'مسیر فایل مشخص نشده است.' };
     }
 
-    // نرمال‌سازی مسیر فایل در صورتی که URL یا پیشوند فرستاده شده باشد
+    // نرمال‌سازی مسیر فایل در صورتی که URL کامل، باکت یا پیشوندهای مختلف ارسال شده باشد
     let cleanPath = filePath;
-    if (cleanPath.includes('order-documents/')) {
+    if (cleanPath.includes('documents/')) {
+      cleanPath = cleanPath.split('documents/')[1];
+    } else if (cleanPath.includes('order-documents/')) {
       cleanPath = cleanPath.split('order-documents/')[1];
     } else if (cleanPath.includes('/uploads/')) {
       cleanPath = 'uploads/' + cleanPath.split('/uploads/')[1];
     }
-    // حذف اسلش ابتدا یا پارامترهای کوئری احتمالی
     cleanPath = cleanPath.replace(/^\/+/, '').split('?')[0];
 
-    // فراخوانی متد استاندارد createSignedUrl با زمان انقضا (پیش‌فرض ۱۵ دقیقه = ۹۰۰ ثانیه)
+    // تولید لینک موقت امضاشده در باکت documents با انقضای ۱۰ دقیقه (۶۰۰ ثانیه)
     const { data, error } = await supabase.storage
-      .from('order-documents')
+      .from('documents')
       .createSignedUrl(cleanPath, expiresIn);
 
     if (error || !data?.signedUrl) {

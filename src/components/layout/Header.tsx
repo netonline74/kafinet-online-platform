@@ -58,15 +58,15 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // بستن منو هنگام کلیک خارج از آن
+  // بستن منو در صورت کلیک در بیرون کادر
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setIsOpen(false);
       }
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
   return (
@@ -108,11 +108,18 @@ export default function Header() {
             صفحه اصلی
           </Link>
 
-          {/* دکمه منوی بازشونده خدمات ما طبق خواسته کاربر */}
-          <div className="relative" ref={menuRef}>
+          {/* کانتینر دراپ‌داون خدمات */}
+          <div 
+            className="relative" 
+            ref={menuRef}
+            onMouseLeave={() => setIsOpen(false)}
+          >
             <button
               type="button"
-              onClick={() => setIsOpen(!isOpen)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsOpen((prev) => !prev);
+              }}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all cursor-pointer pointer-events-auto font-bold text-sm ${
                 isOpen 
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' 
@@ -128,13 +135,16 @@ export default function Header() {
               <ChevronDown size={15} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            {/* پنل ساده بازشونده با z-[9999] absolute top-full */}
+            {/* لیست بازشونده */}
             {isOpen && (
-              <div className="z-[9999] absolute top-full right-0 mt-2 w-80 sm:w-96 bg-white border border-slate-200 shadow-2xl rounded-2xl p-3 max-h-[75vh] overflow-y-auto">
+              <div 
+                className="z-[9999] absolute top-full right-0 mt-2 w-80 sm:w-96 bg-white border border-slate-200 shadow-2xl rounded-2xl p-3 max-h-[75vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <div className="p-2 border-b border-slate-100 flex items-center justify-between text-xs font-bold text-slate-500 mb-2">
                   <span className="flex items-center gap-1.5 text-slate-800 font-extrabold">
                     <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                    تمام ۲۰ خدمت فعال سامانه
+                    تمام {servicesConfig.length} خدمت فعال سامانه
                   </span>
                   <Link 
                     href="/#services" 
@@ -222,7 +232,7 @@ export default function Header() {
             onClick={() => setMobileMenuOpen(false)}
             className="block px-3 py-2 rounded-xl text-sm font-bold text-blue-600 bg-blue-50"
           >
-            لیست تمام ۲۰ خدمت
+            لیست تمام {servicesConfig.length} خدمت
           </Link>
           <Link 
             href="/#news" 
