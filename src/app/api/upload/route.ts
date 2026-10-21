@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { verifyAdminSession } from '@/lib/auth';
+import { checkRateLimit, extractClientIp } from '@/lib/rateLimit';
 
 // حداکثر حجم مجاز: ۵ مگابایت (۵ * ۱۰۲۴ * ۱۰۲۴ بایت)
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
@@ -64,6 +66,26 @@ function detectRealMimeType(buffer: Buffer): { mimeType: string; extension: stri
 
 export async function POST(req: NextRequest) {
   try {
+    // ۰. بررسی محدودیت نرخ بارگذاری بر مبنای IP (حداکثر ۱۵ آپلود در هر دقیقه)
+    const clientIp = extractClientIp(req.headers);
+    const rateLimit = checkRateLimit(`upload:${clientIp}`, 15, 60 * 1000);
+
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { 
+          error: `تعداد درخواست‌های بارگذاری شما بیش از حد مجاز است. لطفاً پس از ${rateLimit.resetInSeconds} ثانیه مجدداً تلاش کنید.` 
+        },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': String(rateLimit.resetInSeconds),
+            'X-RateLimit-Limit': String(rateLimit.limit),
+            'X-RateLimit-Remaining': String(rateLimit.remaining),
+          }
+        }
+      );
+    }
+
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
 
@@ -163,9 +185,17 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// متد GET برای تولید لینک امضاشده موقت (Signed URL) از طریق API در صورت نیاز کلاینت یا پنل
+// متد GET برای تولید لینک امضاشده موقت (Signed URL) - محدود به احراز هویت معتبر ادمین
 export async function GET(req: NextRequest) {
   try {
+    const isAuthorized = await verifyAdminSession();
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { error: 'دسترسی غیرمجاز: صدور لینک امضاشده منوط به داشتن توکن یا احراز هویت معتبر مدیریت است.' },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const filePath = searchParams.get('path');
     const expiresInParam = searchParams.get('expiresIn');

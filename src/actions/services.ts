@@ -3,8 +3,9 @@
 import { supabase } from '@/lib/supabase';
 import { ServiceCategory, Service } from '@/types/service';
 import { revalidatePath } from 'next/cache';
+import { verifyAdminSession } from '@/lib/auth';
 
-// دریافت تمام دسته‌بندی‌ها
+// دریافت تمام دسته‌بندی‌ها (عمومی)
 export async function getCategories() {
   const { data, error } = await supabase
     .from('service_categories')
@@ -15,7 +16,7 @@ export async function getCategories() {
   return { success: true, categories: data as ServiceCategory[] };
 }
 
-// دریافت فقط خدمات فعال (برای سایت)
+// دریافت فقط خدمات فعال (عمومی برای سایت)
 export async function getServices() {
   const { data, error } = await supabase
     .from('services')
@@ -28,8 +29,16 @@ export async function getServices() {
   return { success: true, services: data as Service[] };
 }
 
-// دریافت کل خدمات (برای پنل ادمین)
+// دریافت کل خدمات (منحصراً برای پنل ادمین - حفاظت با نشست ادمین)
 export async function getAllServicesAdmin() {
+  const isAuthorized = await verifyAdminSession();
+  if (!isAuthorized) {
+    return {
+      success: false,
+      error: 'دسترسی غیرمجاز: مشاهده تمام خدمات نیازمند نشست مدیریت است.',
+    };
+  }
+
   const { data, error } = await supabase
     .from('services')
     .select('*')
@@ -40,8 +49,16 @@ export async function getAllServicesAdmin() {
   return { success: true, services: data as Service[] };
 }
 
-// ثبت دسته‌بندی جدید
+// ثبت دسته‌بندی جدید (منحصراً برای پنل ادمین - حفاظت با نشست ادمین)
 export async function createCategoryAction(data: { id: string; title: string; description: string; icon_name: string; display_order: number }) {
+  const isAuthorized = await verifyAdminSession();
+  if (!isAuthorized) {
+    return {
+      success: false,
+      error: 'دسترسی غیرمجاز: ثبت دسته‌بندی جدید نیازمند دسترسی مدیریت است.',
+    };
+  }
+
   const { error } = await supabase.from('service_categories').insert([data]);
   if (error) return { success: false, error: error.message };
   revalidatePath('/');
@@ -49,8 +66,16 @@ export async function createCategoryAction(data: { id: string; title: string; de
   return { success: true };
 }
 
-// ثبت خدمت جدید
-export async function createServiceAction(data: { id: string; category_id: string; title: string; description: string; required_documents: string[]; base_price: number; display_order: number; is_active: boolean }) {
+// ثبت خدمت جدید (منحصراً برای پنل ادمین - حفاظت با نشست ادمین)
+export async function createServiceAction(data: { id: string; category_id: string; title: string; description: string; required_documents: any[]; base_price: number; display_order: number; is_active: boolean }) {
+  const isAuthorized = await verifyAdminSession();
+  if (!isAuthorized) {
+    return {
+      success: false,
+      error: 'دسترسی غیرمجاز: ثبت خدمت جدید نیازمند دسترسی مدیریت است.',
+    };
+  }
+
   const { error } = await supabase.from('services').insert([data]);
   if (error) return { success: false, error: error.message };
   revalidatePath('/');
